@@ -1,0 +1,2 @@
+xmc_gpio.h:367:26:XMC_GPIO_GetInput	16	static
+mylib.c:14:7:debounce	32	static

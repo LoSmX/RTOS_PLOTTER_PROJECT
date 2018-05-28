@@ -1,0 +1,3 @@
+bsp_sys.c:47:7:BSP_LowLevelInit	16	static
+bsp_sys.c:75:7:BSP_SysInit	16	static
+bsp_sys.c:192:12:BSP_SysClkFreqGet	24	static

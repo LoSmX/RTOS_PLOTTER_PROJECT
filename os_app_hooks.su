@@ -1,0 +1,10 @@
+os_app_hooks.c:19:7:App_OS_SetAllHooks	16	static
+os_app_hooks.c:43:7:App_OS_ClrAllHooks	16	static
+os_app_hooks.c:71:7:App_OS_TaskCreateHook	16	static
+os_app_hooks.c:85:7:App_OS_TaskDelHook	16	static
+os_app_hooks.c:100:7:App_OS_TaskReturnHook	16	static
+os_app_hooks.c:112:7:App_OS_IdleTaskHook	4	static
+os_app_hooks.c:123:7:App_OS_InitHook	4	static
+os_app_hooks.c:136:7:App_OS_StatTaskHook	4	static
+os_app_hooks.c:153:7:App_OS_TaskSwHook	4	static
+os_app_hooks.c:165:7:App_OS_TimeTickHook	4	static
