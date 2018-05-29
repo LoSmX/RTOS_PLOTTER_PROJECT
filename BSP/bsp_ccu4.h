@@ -13,15 +13,13 @@
 #include <stdbool.h>
 
 
-#define SLICE_NUMBER      (1U)
-#define SLICE_NUMBER2     (2U)
-#define SLICE_PTR         CCU40_CC41
-#define SLICE_PTR2        CCU40_CC42
+#define SLICE_NUMBER      (0U)
+#define SLICE_PTR         CCU40_CC40
 #define MODULE_PTR        CCU40
 #define MODULE_NUMBER     (0U)
 #define CAPCOM_MASK       (SCU_GENERAL_CCUCON_GSC40_Msk) /**< Only CCU42 */
-#define PERIODE		 	  100000U
-#define CAPTURE1		  5000U
+#define PERIODE		 	  9374u
+#define CAPTURE1		  1800U
 
 int percent;
 int percent2;

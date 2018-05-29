@@ -382,6 +382,7 @@ static void AppTaskEndstops (void *p_arg)
 			if(l_state1){
 				APP_TRACE_INFO ("ENDSTOP1 PRESSED ...\n");
 				l_state1=0;
+				CCU40_0_SetCapture(2);
 			}
 		}else{
 			l_state1=1;
@@ -391,6 +392,7 @@ static void AppTaskEndstops (void *p_arg)
 			if(l_state2){
 				APP_TRACE_INFO ("ENDSTOP2 PRESSED ...\n");
 				l_state2=0;
+
 			}
 		}else{
 			l_state2=1;
@@ -400,6 +402,7 @@ static void AppTaskEndstops (void *p_arg)
 			if(l_state3){
 				APP_TRACE_INFO ("ENDSTOP3 PRESSED ...\n");
 				l_state3=0;
+				CCU40_0_SetCapture(1);
 			}
 		}else{
 			l_state3=1;

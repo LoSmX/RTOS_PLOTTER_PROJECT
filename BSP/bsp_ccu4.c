@@ -18,7 +18,7 @@ _Bool BSP_CCU4_Init (void)
 	  .dither_duty_cycle   = 0U,
 	  .prescaler_mode	   = XMC_CCU4_SLICE_PRESCALER_MODE_NORMAL,
 	  .mcm_enable		   = 0U,
-	  .prescaler_initval   = 0U,
+	  .prescaler_initval   = 8U,
 	  .float_limit		   = 0U,
 	  .dither_limit		   = 0U,
 	  .passive_level 	   = XMC_CCU4_SLICE_OUTPUT_PASSIVE_LEVEL_LOW,
@@ -36,11 +36,18 @@ _Bool BSP_CCU4_Init (void)
 	  .prescaler_initval   = 0,
 	  .float_limit		   = 0,
 	  .timer_concatenation = false
+
+	  XMC_GPIO_CONFIG_t SLICE0_OUTPUT_config =
+	  {
+		.mode = XMC_GPIO_MODE_OUTPUT_PUSH_PULL_ALT4,
+		.input_hysteresis = XMC_GPIO_INPUT_HYSTERESIS_STANDARD,
+		.output_level = XMC_GPIO_OUTPUT_LEVEL_LOW,
+		};
 	};*/
 
 	  /* Local variable which holds configuration of Event-1 */
 	XMC_CCU4_SLICE_EVENT_CONFIG_t config;
-	config.duration = XMC_CCU4_SLICE_EVENT_FILTER_5_CYCLES;
+	config.duration = XMC_CCU4_SLICE_EVENT_FILTER_DISABLED;
 	config.edge     = XMC_CCU4_SLICE_EVENT_EDGE_SENSITIVITY_RISING_EDGE;
 	config.level    = XMC_CCU4_SLICE_EVENT_LEVEL_SENSITIVITY_ACTIVE_HIGH; /* Not needed */
 	config.mapped_input = XMC_CCU4_SLICE_INPUT_I;
@@ -78,25 +85,22 @@ _Bool BSP_CCU4_Init (void)
 	XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR, CAPTURE1);//32000U
 
 	/* Enable shadow transfer */
-	XMC_CCU4_EnableShadowTransfer(MODULE_PTR,(uint32_t)(XMC_CCU4_SHADOW_TRANSFER_SLICE_1));
-
+	XMC_CCU4_EnableShadowTransfer(MODULE_PTR, 							\
+			(uint32_t)(XMC_CCU4_SHADOW_TRANSFER_SLICE_0|				\
+			XMC_CCU4_SHADOW_TRANSFER_PRESCALER_SLICE_0));
 	/* Configure Event-1 and map it to Input-I */
-	XMC_CCU4_SLICE_ConfigureEvent(SLICE_PTR, XMC_CCU4_SLICE_EVENT_1, &config);
+	XMC_CCU4_SLICE_ConfigureEvent(SLICE_PTR, XMC_CCU4_SLICE_EVENT_0, &config);
 	/* Map Event-1 to Start function */
-	XMC_CCU4_SLICE_StartConfig(SLICE_PTR, XMC_CCU4_SLICE_EVENT_1, XMC_CCU4_SLICE_START_MODE_TIMER_START_CLEAR);
+	XMC_CCU4_SLICE_StartConfig(SLICE_PTR, XMC_CCU4_SLICE_EVENT_0, XMC_CCU4_SLICE_START_MODE_TIMER_START_CLEAR);
 
 	/* Generate an external start trigger */
 	XMC_SCU_SetCcuTriggerHigh(CAPCOM_MASK);
-
+	XMC_CCU4_EnableClock(MODULE_PTR, SLICE_NUMBER);
+	XMC_CCU4_SLICE_StartTimer(SLICE_PTR);
 	return true;
 }
 
-void CCU40_0_SetCapture(int dc)
-{
-	percent=dc;
-	if(percent!=100 && percent!=0){
-		XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR, ((PERIODE/100)*dc));
-		XMC_CCU4_EnableShadowTransfer(MODULE_PTR,XMC_CCU4_SHADOW_TRANSFER_SLICE_1);
-	}
+void CCU40_0_SetCapture(int dc){
+	XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR, (PERIODE/(dc*10)));
+	XMC_CCU4_EnableShadowTransfer(MODULE_PTR,XMC_CCU4_SHADOW_TRANSFER_SLICE_0);
 }
-

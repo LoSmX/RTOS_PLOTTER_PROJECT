@@ -4,4 +4,4 @@ app.c:206:13:AppObjCreate	24	static
 app.c:236:14:AppTaskCreate	56	static
 app.c:312:13:AppTaskCom	112	static
 app.c:370:13:AppTaskEndstops	24	static
-app.c:419:13:AppTaskServo	24	static
+app.c:422:13:AppTaskServo	24	static

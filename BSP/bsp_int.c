@@ -148,7 +148,6 @@ static void CCU40_0_IRQHandler(void)
 {
   XMC_CCU4_SLICE_ClearEvent(SLICE_PTR, XMC_CCU4_SLICE_IRQ_ID_PERIOD_MATCH);
   //APP_TRACE_INFO ("sH ...\n");
-  BSP_SERVO_HIGH();
   XMC_SCU_SetCcuTriggerLow(CAPCOM_MASK);
   XMC_SCU_SetCcuTriggerHigh(CAPCOM_MASK);
 }
@@ -157,7 +156,6 @@ static void CCU40_1_IRQHandler(void){
 
 	XMC_CCU4_SLICE_ClearEvent(SLICE_PTR,  XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP);
 		//APP_TRACE_INFO ("sL ...\n");
-		BSP_SERVO_LOW();
 }
 
 /**
