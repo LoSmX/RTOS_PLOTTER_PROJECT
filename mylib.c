@@ -12,8 +12,7 @@
 
 //_________________________________DEBOUNCE
 _Bool debounce(int port,  int pin){
-	CPU_INT08U i=10;
-	CPU_INT08U time=0;
+	CPU_INT08U i=2;
 	CPU_INT08U f_press=0;
 	CPU_INT08U press=0;
 	OS_ERR      err;
@@ -21,7 +20,7 @@ _Bool debounce(int port,  int pin){
 	while(--i){
 		press=XMC_GPIO_GetInput((XMC_GPIO_PORT_t *const) port,(const uint8_t)pin);
 		if(f_press==press){
-			time++;
+
 		}else{
 			return press;
 		}

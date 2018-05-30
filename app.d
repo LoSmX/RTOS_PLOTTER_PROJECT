@@ -25,24 +25,30 @@ app.o: app.c app_cfg.h ../UCOS3/uC-CPU/cpu_core.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\_stdint.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\machine\types.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\stdio.h BSP/bsp_sys.h \
- BSP/bsp_int.h BSP/bsp_gpio.h ../XMCLIB/inc/xmc_gpio.h \
- ../XMCLIB/inc/xmc_common.h \
+ BSP/bsp_int.h BSP/bsp_gpio.h BSP/../../XMCLIB/inc/xmc_gpio.h \
+ BSP/../../XMCLIB/inc/xmc_common.h \
  d:\ebs\5.4\ 2016q3\lib\gcc\arm-none-eabi\5.4.1\include\stdint.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\stdint.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\_intsup.h \
  d:\ebs\5.4\ 2016q3\lib\gcc\arm-none-eabi\5.4.1\include\stdbool.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\string.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\string.h \
- ../XMCLIB/inc/xmc_device.h \
+ BSP/../../XMCLIB/inc/xmc_device.h \
  ../CMSIS/CMSIS/Infineon/XMC4500_series/Include/XMC4500.h \
  ../CMSIS/CMSIS/Include/core_cm4.h ../CMSIS/CMSIS/Include/core_cmInstr.h \
  ../CMSIS/CMSIS/Include/core_cmFunc.h \
  ../CMSIS/CMSIS/Include/core_cm4_simd.h \
  ../CMSIS/CMSIS/Infineon/XMC4500_series/Include/system_XMC4500.h \
- ../XMCLIB/inc/xmc4_gpio.h ../XMCLIB/inc/xmc4_gpio_map.h \
- ../XMCLIB/inc/xmc_uart.h ../XMCLIB/inc/xmc_usic.h \
- ../XMCLIB/inc/xmc4_usic_map.h BSP/bsp_ccu4.h ../XMCLIB/inc/xmc_ccu4.h \
- ../XMCLIB/inc/xmc_scu.h ../XMCLIB/inc/xmc4_scu.h \
+ BSP/../../XMCLIB/inc/xmc4_gpio.h BSP/../../XMCLIB/inc/xmc4_gpio_map.h \
+ BSP/../../XMCLIB/inc/xmc_uart.h BSP/../../XMCLIB/inc/xmc_usic.h \
+ BSP/../../XMCLIB/inc/xmc4_usic_map.h BSP/bsp_ccu4.h \
+ BSP/../../XMCLIB/inc/xmc_ccu4.h BSP/../../XMCLIB/inc/xmc4_ccu4_map.h \
+ BSP/bsp_spi.h ../XMCLIB/inc/xmc_spi.h ../XMCLIB/inc/xmc_usic.h \
+ ../XMCLIB/inc/xmc_gpio.h \
+ d:\ebs\5.4\ 2016q3\arm-none-eabi\include\errno.h \
+ d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\errno.h mcp23s08_drv.h \
+ ../XMCLIB/inc/xmc_gpio.h ../XMCLIB/inc/xmc_spi.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\stdlib.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\machine\stdlib.h \
- ../CMSIS/GPIO.h ../UCOS3/uC-LIB/lib_math.h mylib.h BSP/debug_lib.h
+ ../CMSIS/GPIO.h ../UCOS3/uC-LIB/lib_math.h mylib.h \
+ ../XMCLIB/inc/xmc_uart.h BSP/debug_lib.h

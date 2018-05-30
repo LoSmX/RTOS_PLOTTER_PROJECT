@@ -40,4 +40,6 @@ BSP/bsp.o: BSP/bsp.c BSP/bsp.h \
  ../XMCLIB/inc/xmc_uart.h ../XMCLIB/inc/xmc_usic.h \
  ../XMCLIB/inc/xmc4_usic_map.h BSP/bsp_gpio.h BSP/bsp_ccu4.h \
  ../XMCLIB/inc/xmc_ccu4.h ../XMCLIB/inc/xmc_scu.h \
- ../XMCLIB/inc/xmc4_scu.h
+ ../XMCLIB/inc/xmc4_scu.h BSP/bsp_spi.h ../XMCLIB/inc/xmc_spi.h \
+ d:\ebs\5.4\ 2016q3\arm-none-eabi\include\errno.h \
+ d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\errno.h app_cfg.h

@@ -17,8 +17,8 @@
 #define ENDSTOP4 P1_12
 
 
-#include <xmc_gpio.h>
-#include <xmc_uart.h>
+#include "../../XMCLIB/inc/xmc_gpio.h"
+#include "../../XMCLIB/inc/xmc_uart.h"
 #include <stdio.h>
 
 _Bool BSP_GPIO_Init (void) ;

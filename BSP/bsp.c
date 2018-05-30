@@ -14,6 +14,10 @@
 #include  <bsp_uart.h>
 #include  <bsp_gpio.h>
 #include  <bsp_ccu4.h>
+#include  <bsp_spi.h>
+#include  <app_cfg.h>
+
+
 
 
 /********************************************************* FILE LOCAL DEFINES */
@@ -39,5 +43,9 @@ void  BSP_Init (void)
 	BSP_UART_Init();
 	BSP_GPIO_Init();
 	BSP_CCU4_Init();
+	if(BSP_SPI_Init()!=SPI_OK){
+		APP_TRACE_INFO ("SPI NOT OK ...\n");
+		/*Error should never get here*/
+	}
 }
 /** EOF */

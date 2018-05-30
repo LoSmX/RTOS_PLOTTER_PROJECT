@@ -13,6 +13,12 @@ XMC_GPIO_CONFIG_t servo_config = {
 	.output_strength = XMC_GPIO_OUTPUT_STRENGTH_MEDIUM
 };
 
+XMC_GPIO_CONFIG_t gpio_config = {
+	.mode = XMC_GPIO_MODE_OUTPUT_PUSH_PULL_ALT3,
+	.output_level = XMC_GPIO_OUTPUT_LEVEL_LOW,
+	.output_strength = XMC_GPIO_OUTPUT_STRENGTH_MEDIUM
+};
+
 /**
  * @brief  Initialize UART1 CH1 - Tx=P0.1, Rx=P0.0, 9600-8N1
  * @return true on success, false otherwise
@@ -26,7 +32,6 @@ _Bool BSP_GPIO_Init (void)
 	XMC_GPIO_SetMode(ENDSTOP2,XMC_GPIO_MODE_INPUT_PULL_DOWN);
 	XMC_GPIO_SetMode(ENDSTOP3,XMC_GPIO_MODE_INPUT_PULL_DOWN);
 	XMC_GPIO_SetMode(ENDSTOP4,XMC_GPIO_MODE_INPUT_PULL_DOWN);
-
 
 	return true;
 }

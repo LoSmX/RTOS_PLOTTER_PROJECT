@@ -6,6 +6,11 @@
  */
 #include <bsp_ccu4.h>
 #include <bsp_gpio.h>
+#include <XMC4500.h>
+#include "../../XMCLIB/inc/xmc_scu.h"
+#include "../../XMCLIB/inc/xmc4_ccu4_map.h"
+
+
 
 _Bool BSP_CCU4_Init (void)
 {

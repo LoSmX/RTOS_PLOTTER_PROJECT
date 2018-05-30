@@ -1,0 +1,10 @@
+xmc_usic.h:635:22:XMC_USIC_CH_SetInputSource	16	static
+xmc_usic.h:1761:22:XMC_USIC_CH_SetMode	16	static
+xmc_spi.h:355:22:XMC_SPI_CH_Start	16	static
+xmc_spi.h:566:26:XMC_SPI_CH_GetStatusFlag	16	static
+xmc_spi.h:587:22:XMC_SPI_CH_ClearStatusFlag	16	static
+xmc_spi.h:927:22:XMC_SPI_CH_SetInputSource	16	static
+xmc_gpio.h:290:22:XMC_GPIO_SetOutputHigh	16	static
+bsp_spi.c:31:9:BSP_SPI_Init	8	static
+bsp_spi.c:75:9:_spi_transmit	16	static
+bsp_spi.c:91:9:_spi_receive	16	static

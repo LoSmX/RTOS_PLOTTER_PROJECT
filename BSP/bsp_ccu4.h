@@ -8,9 +8,9 @@
 #ifndef APP_TEST_BSP_BSP_CCU4_H_
 #define APP_TEST_BSP_BSP_CCU4_H_
 
-#include <xmc_ccu4.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "../../XMCLIB/inc/xmc_ccu4.h"
 
 
 #define SLICE_NUMBER      (0U)

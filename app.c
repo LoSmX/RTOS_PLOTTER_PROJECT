@@ -18,12 +18,13 @@
 #include <app_cfg.h>
 #include <cpu_core.h>
 #include <os.h>
-
 #include <bsp.h>
 #include <bsp_sys.h>
 #include <bsp_int.h>
 #include <bsp_gpio.h>
 #include <bsp_ccu4.h>
+#include <bsp_spi.h>
+#include <mcp23s08_drv.h>
 
 #include <string.h>
 #include <stdbool.h>
@@ -35,6 +36,7 @@
 #include <lib_math.h>
 
 #include <mylib.h>
+#include "../XMCLIB/inc/xmc_uart.h"
 
 #if SEMI_HOSTING
 #include <debug_lib.h>
@@ -376,8 +378,11 @@ static void AppTaskEndstops (void *p_arg)
 	OS_ERR      err;
 	CPU_TS      ts=0;
 	APP_TRACE_INFO ("Entering AppTaskEndstops ...\n");
+	CCU40_0_SetCapture(2);
+
 	while(1){
 //ENDSTOP1
+
 		if(0==debounce(ENDSTOP1)){			//Button 2	//
 			if(l_state1){
 				APP_TRACE_INFO ("ENDSTOP1 PRESSED ...\n");
@@ -423,7 +428,24 @@ static void AppTaskServo (void *p_arg){
 	OS_ERR      err;
 	CPU_TS      ts=0;
 	APP_TRACE_INFO ("Entering AppTaskServo ...\n");
+
+	_mcp23s08_reset();
+
+	//REG SETUP
+	_mcp23s08_reset_ss(MCP23S08_SS);
+	_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_IODIR,0,MCP23S08_WR);
+	_mcp23s08_set_ss(MCP23S08_SS);
+
 	while(1){
+
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		//_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x01,MCP23S08_WR);
+		//_mcp23s08_set_ss(MCP23S08_SS);
+
+		while(_mcp23s08_step_negx());
+		while(_mcp23s08_step_negy());
+		while(_mcp23s08_step_posx());
+		while(_mcp23s08_step_posy());
 
 	}
 }
