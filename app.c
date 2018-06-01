@@ -65,9 +65,13 @@ static  OS_TCB   AppTaskServoTCB;
 
 // Memory Block                                                           // <2>
 OS_MEM      Mem_Partition;
+OS_MEM      Mem_Partition1;
+OS_MEM      Mem_Partition2;
 CPU_CHAR    MyPartitionStorage[NUM_MSG - 1][MAX_MSG_LENGTH];
 // Message Queue
 OS_Q        UART_ISR;
+OS_Q        Q_STEP_X;
+OS_Q        Q_STEP_Y;
 
 
 
@@ -76,8 +80,8 @@ static  void AppTaskStart (void  *p_arg);
 static  void AppTaskCreate (void);
 static  void AppObjCreate (void);
 static  void AppTaskCom (void  *p_arg);
-static  void AppTaskEndstops (void  *p_arg);
-static  void AppTaskServo (void  *p_arg);
+void AppTaskStepper_X (void  *p_arg);
+void AppTaskStepper_Y (void  *p_arg);
 /************************************************************ FUNCTIONS/TASKS */
 
 /*********************************************************************** MAIN */
@@ -174,6 +178,10 @@ static void AppTaskStart (void *p_arg)
   Mem_Init();
   // initialize mathematical module
   Math_Init();
+  //Ta
+  pen_up();
+
+  _mcp23s08_Plotter_Init();
 
 // compute CPU capacity with no task running
 #if (OS_CFG_STAT_TASK_EN > 0u)                                           // <10>
@@ -208,24 +216,56 @@ static void AppTaskStart (void *p_arg)
 static void AppObjCreate (void)
 {
 	OS_ERR      err;
-
 	// Create Shared Memory
-	OSMemCreate ( (OS_MEM    *) &Mem_Partition,
-			(CPU_CHAR  *) "Mem Partition",
-			(void      *) &MyPartitionStorage[0][0],
-			(OS_MEM_QTY)  NUM_MSG,
-			(OS_MEM_SIZE) MAX_MSG_LENGTH * sizeof (CPU_CHAR),
-			(OS_ERR    *) &err);
-	if (err != OS_ERR_NONE)
-	  APP_TRACE_DBG ("Error OSMemCreate: AppObjCreate\n");
+	  OSMemCreate ( (OS_MEM    *) &Mem_Partition,
+	          (CPU_CHAR  *) "Mem Partition",
+	          (void      *) &MyPartitionStorage[0][0],
+	          (OS_MEM_QTY)  NUM_MSG,
+	          (OS_MEM_SIZE) MAX_MSG_LENGTH * sizeof (CPU_CHAR),
+	          (OS_ERR    *) &err);
+	  if (err != OS_ERR_NONE)
+	    APP_TRACE_DBG ("Error OSMemCreate: AppObjCreate\n");
+	  // Create Shared Memory
+	   OSMemCreate ( (OS_MEM    *) &Mem_Partition1,
+	           (CPU_CHAR  *) "Mem Partition1",
+	           (void      *) &MyPartitionStorage[1][0],
+	           (OS_MEM_QTY)  NUM_MSG,
+	           (OS_MEM_SIZE) MAX_MSG_LENGTH * sizeof (CPU_CHAR),
+	           (OS_ERR    *) &err);
+	   if (err != OS_ERR_NONE)
+	     APP_TRACE_DBG ("Error OSMemCreate: AppObjCreate\n");
+	   // Create Shared Memory
+	   OSMemCreate ( (OS_MEM    *) &Mem_Partition2,
+	              (CPU_CHAR  *) "Mem Partition2",
+	              (void      *) &MyPartitionStorage[2][0],
+	              (OS_MEM_QTY)  NUM_MSG,
+	              (OS_MEM_SIZE) MAX_MSG_LENGTH * sizeof (CPU_CHAR),
+	              (OS_ERR    *) &err);
+	      if (err != OS_ERR_NONE)
+	        APP_TRACE_DBG ("Error OSMemCreate: AppObjCreate\n");
+	  // Create Message Queue
+	  OSQCreate ( (OS_Q *)     &UART_ISR,
+	        (CPU_CHAR *) "ISR Queue",
+	        (OS_MSG_QTY) NUM_MSG,
+	        (OS_ERR   *) &err);
+	  if (err != OS_ERR_NONE)
+	    APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 
-	// Create Message Queue
-	OSQCreate ( (OS_Q *)     &UART_ISR,
-		  (CPU_CHAR *) "ISR Queue",
-		  (OS_MSG_QTY) NUM_MSG,
-		  (OS_ERR   *) &err);
-	if (err != OS_ERR_NONE)
-	  APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
+	  // Create Message Queue
+	  OSQCreate ( (OS_Q *)     &Q_STEP_X,
+	 	              (CPU_CHAR *) "LED1_1 Queue",
+	 	              (OS_MSG_QTY) NUM_MSG,
+	 	              (OS_ERR   *) &err);
+	  if (err != OS_ERR_NONE)
+		  APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
+	    // Create Message Queue
+	  OSQCreate ( (OS_Q *)     &Q_STEP_Y,
+	              (CPU_CHAR *) "LED1_1 Queue",
+	              (OS_MSG_QTY) NUM_MSG,
+	              (OS_ERR   *) &err);
+	  if (err != OS_ERR_NONE)
+		  APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
+
 }
 
 /*************************************************** Create Application Tasks */
@@ -258,8 +298,8 @@ static void  AppTaskCreate (void)
 
   // create AppTask_IO
     OSTaskCreate ( (OS_TCB     *) &AppTaskEndstopsTCB,
-             (CPU_CHAR   *) "TaskEndstops",
-             (OS_TASK_PTR) AppTaskEndstops,
+             (CPU_CHAR   *) "TaskStepper_Y",
+             (OS_TASK_PTR) AppTaskStepper_Y,
              (void       *) 0,
              (OS_PRIO) APP_CFG_TASK_ENDSTOPS_PRIO,
              (CPU_STK    *) &AppTaskEndstopsStk[0],
@@ -273,22 +313,24 @@ static void  AppTaskCreate (void)
     if (err != OS_ERR_NONE)
       APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate\n");
 
-    // create AppTask_IO
-      OSTaskCreate ( (OS_TCB     *) &AppTaskServoTCB,
-               (CPU_CHAR   *) "TaskServo",
-               (OS_TASK_PTR) AppTaskServo,
-               (void       *) 0,
-               (OS_PRIO) APP_CFG_TASK_SERVO_PRIO,
-               (CPU_STK    *) &AppTaskServoStk[0],
-               (CPU_STK_SIZE) APP_CFG_TASK_COM_STK_SIZE / 10u,
-               (CPU_STK_SIZE) APP_CFG_TASK_COM_STK_SIZE,
-               (OS_MSG_QTY) 0u,
-               (OS_TICK) 0u,
-               (void       *) 0,
-               (OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
-               (OS_ERR     *) &err);
-      if (err != OS_ERR_NONE)
-        APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate\n");
+
+  // create AppTask_IO
+        OSTaskCreate ( (OS_TCB     *) &AppTaskServoTCB,
+                 (CPU_CHAR   *) "TaskStepper_X",
+                 (OS_TASK_PTR) AppTaskStepper_X,
+                 (void       *) 0,
+                 (OS_PRIO) APP_CFG_TASK_SERVO_PRIO,
+                 (CPU_STK    *) &AppTaskServoStk[0],
+                 (CPU_STK_SIZE) APP_CFG_TASK_COM_STK_SIZE / 10u,
+                 (CPU_STK_SIZE) APP_CFG_TASK_COM_STK_SIZE,
+                 (OS_MSG_QTY) 0u,
+                 (OS_TICK) 0u,
+                 (void       *) 0,
+                 (OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+                 (OS_ERR     *) &err);
+        if (err != OS_ERR_NONE)
+          APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate\n");
+
 }
 
 /*********************************** Communication Application Task */
@@ -369,84 +411,27 @@ static void AppTaskCom (void *p_arg)
   }
 }
 /***********************************AppTask_Io*/
-static void AppTaskEndstops (void *p_arg)
+void AppTaskStepper_Y (void *p_arg)
 {
-	_Bool l_state1 =1;
-	_Bool l_state2 =1;
-	_Bool l_state3 =1;
-	_Bool l_state4 =1;
 	OS_ERR      err;
 	CPU_TS      ts=0;
-	APP_TRACE_INFO ("Entering AppTaskEndstops ...\n");
-	CCU40_0_SetCapture(2);
+	APP_TRACE_INFO ("Entering AppTaskStepperY ...\n");
 
 	while(1){
-//ENDSTOP1
-
-		if(0==debounce(ENDSTOP1)){			//Button 2	//
-			if(l_state1){
-				APP_TRACE_INFO ("ENDSTOP1 PRESSED ...\n");
-				l_state1=0;
-				CCU40_0_SetCapture(2);
-			}
-		}else{
-			l_state1=1;
-		}
-//ENDSTOP2
-		if(0==debounce(ENDSTOP2)){			//Button 1	//
-			if(l_state2){
-				APP_TRACE_INFO ("ENDSTOP2 PRESSED ...\n");
-				l_state2=0;
-
-			}
-		}else{
-			l_state2=1;
-		}
-//ENDSTOP3
-		if(0==debounce(ENDSTOP3)){			//Button 1	//
-			if(l_state3){
-				APP_TRACE_INFO ("ENDSTOP3 PRESSED ...\n");
-				l_state3=0;
-				CCU40_0_SetCapture(1);
-			}
-		}else{
-			l_state3=1;
-		}
-//ENDSTOP4
-		if(0==debounce(ENDSTOP4)){			//Button 1	//
-			if(l_state4){
-				APP_TRACE_INFO ("ENDSTOP4 PRESSED ...\n");
-				l_state4=0;
-			}
-		}else{
-			l_state4=1;
-		}
+		while(_mcp23s08_step_posy()){}
+		while(_mcp23s08_step_negy()){}
 	}//Whileend
 }
+
 //Servo
-static void AppTaskServo (void *p_arg){
+void AppTaskStepper_X (void *p_arg){
 	OS_ERR      err;
 	CPU_TS      ts=0;
-	APP_TRACE_INFO ("Entering AppTaskServo ...\n");
-
-	_mcp23s08_reset();
-
-	//REG SETUP
-	_mcp23s08_reset_ss(MCP23S08_SS);
-	_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_IODIR,0,MCP23S08_WR);
-	_mcp23s08_set_ss(MCP23S08_SS);
+	APP_TRACE_INFO ("Entering AppTaskStepperX ...\n");
 
 	while(1){
-
-		//_mcp23s08_reset_ss(MCP23S08_SS);
-		//_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x01,MCP23S08_WR);
-		//_mcp23s08_set_ss(MCP23S08_SS);
-
-		while(_mcp23s08_step_negx());
-		while(_mcp23s08_step_negy());
-		while(_mcp23s08_step_posx());
-		while(_mcp23s08_step_posy());
-
+		while(_mcp23s08_step_posx()){}
+		while(_mcp23s08_step_negx()){}
 	}
 }
 /************************************************************************ EOF */

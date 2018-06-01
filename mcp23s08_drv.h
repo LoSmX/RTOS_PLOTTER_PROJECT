@@ -46,5 +46,8 @@ uint8_t _mcp23s08_step_posy(void);
 uint8_t _mcp23s08_step_negx(void);
 uint8_t _mcp23s08_step_posx(void);
 uint8_t _mcp23s08_step_negy(void);
+void 	_mcp23s08_goto_0_0(void);
+void 	_mcp23s08_config_gpio(void);
+void 	_mcp23s08_Plotter_Init(void);
 
 #endif /* INC_MCP23S08_DRV_H_ */

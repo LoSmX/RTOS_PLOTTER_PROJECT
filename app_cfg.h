@@ -30,8 +30,8 @@
 /************************************************************ TASK PRIORITIES */
 #define  APP_CFG_TASK_START_PRIO  		2u
 #define  APP_CFG_TASK_COM_PRIO     		10u
-#define  APP_CFG_TASK_ENDSTOPS_PRIO     		12u
-#define  APP_CFG_TASK_SERVO_PRIO     		13u
+#define  APP_CFG_TASK_ENDSTOPS_PRIO    	11u
+#define  APP_CFG_TASK_SERVO_PRIO     	11u
 
 
 

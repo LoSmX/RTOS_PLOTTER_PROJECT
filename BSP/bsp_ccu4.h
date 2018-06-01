@@ -19,7 +19,7 @@
 #define MODULE_NUMBER     (0U)
 #define CAPCOM_MASK       (SCU_GENERAL_CCUCON_GSC40_Msk) /**< Only CCU42 */
 #define PERIODE		 	  9374u
-#define CAPTURE1		  1800U
+#define CAPTURE1		  460U
 
 int percent;
 int percent2;
