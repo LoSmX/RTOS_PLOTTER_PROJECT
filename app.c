@@ -68,6 +68,8 @@ OS_MEM      Mem_Partition;
 OS_MEM      Mem_Partition1;
 OS_MEM      Mem_Partition2;
 CPU_CHAR    MyPartitionStorage[NUM_MSG - 1][MAX_MSG_LENGTH];
+CPU_CHAR    MyPartitionStorage1[NUM_MSG - 1][MAX_MSG_LENGTH];
+CPU_CHAR    MyPartitionStorage2[NUM_MSG - 1][MAX_MSG_LENGTH];
 // Message Queue
 OS_Q        UART_ISR;
 OS_Q        Q_STEP_X;
@@ -228,7 +230,7 @@ static void AppObjCreate (void)
 	  // Create Shared Memory
 	   OSMemCreate ( (OS_MEM    *) &Mem_Partition1,
 	           (CPU_CHAR  *) "Mem Partition1",
-	           (void      *) &MyPartitionStorage[1][0],
+	           (void      *) &MyPartitionStorage1[0][0],
 	           (OS_MEM_QTY)  NUM_MSG,
 	           (OS_MEM_SIZE) MAX_MSG_LENGTH * sizeof (CPU_CHAR),
 	           (OS_ERR    *) &err);
@@ -237,7 +239,7 @@ static void AppObjCreate (void)
 	   // Create Shared Memory
 	   OSMemCreate ( (OS_MEM    *) &Mem_Partition2,
 	              (CPU_CHAR  *) "Mem Partition2",
-	              (void      *) &MyPartitionStorage[2][0],
+	              (void      *) &MyPartitionStorage2[0][0],
 	              (OS_MEM_QTY)  NUM_MSG,
 	              (OS_MEM_SIZE) MAX_MSG_LENGTH * sizeof (CPU_CHAR),
 	              (OS_ERR    *) &err);
@@ -253,14 +255,14 @@ static void AppObjCreate (void)
 
 	  // Create Message Queue
 	  OSQCreate ( (OS_Q *)     &Q_STEP_X,
-	 	              (CPU_CHAR *) "LED1_1 Queue",
+	 	              (CPU_CHAR *) "STEP_X Queue",
 	 	              (OS_MSG_QTY) NUM_MSG,
 	 	              (OS_ERR   *) &err);
 	  if (err != OS_ERR_NONE)
 		  APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 	    // Create Message Queue
 	  OSQCreate ( (OS_Q *)     &Q_STEP_Y,
-	              (CPU_CHAR *) "LED1_1 Queue",
+	              (CPU_CHAR *) "STEP_Y Queue",
 	              (OS_MSG_QTY) NUM_MSG,
 	              (OS_ERR   *) &err);
 	  if (err != OS_ERR_NONE)
@@ -362,77 +364,235 @@ static void AppTaskCom (void *p_arg)
   CPU_CHAR    msg[MAX_MSG_LENGTH];
   CPU_INT08U  i = 0;
   CPU_CHAR    debug_msg[MAX_MSG_LENGTH + 30];
+  int rv=0;
+  (void) p_arg;
 
-  (void) p_arg;                                                          // <14>
   APP_TRACE_INFO ("Entering AppTaskCom ...\n");
+
   while (DEF_TRUE) {
-    // empty the message buffer
-    memset (&msg, 0, MAX_MSG_LENGTH);                                    // <15>
+	  // empty the message buffer
+	  memset (&msg, 0, MAX_MSG_LENGTH);
 
-    // wait until a message is received
-    p_msg = OSQPend (&UART_ISR,                                          // <16>
-         0,
-         OS_OPT_PEND_BLOCKING,
-         &msg_size,
-         &ts,
-         &err);
-    if (err != OS_ERR_NONE)
-      APP_TRACE_DBG ("Error OSQPend: AppTaskCom\n");
+	  // wait until a message is received
+	  p_msg = OSQPend (&UART_ISR,
+			  0,
+			  OS_OPT_PEND_BLOCKING,
+	          &msg_size,
+	          &ts,
+	          &err);
+	  if (err != OS_ERR_NONE && err != OS_ERR_TIMEOUT)
+		  APP_TRACE_DBG ("Error OSQPend: AppTaskCom\n");
+	  // obtain message we received
+	  memcpy (msg, (CPU_CHAR*) p_msg, msg_size - 1);
 
-    // obtain message we received
-    memcpy (msg, (CPU_CHAR*) p_msg, msg_size - 1);                       // <17>
+	  // release the memory partition allocated in the UART service routine
+	  OSMemPut (&Mem_Partition, p_msg, &err);
+	  if (err != OS_ERR_NONE)
+	 	  APP_TRACE_DBG ("Error OSMemPut: AppTaskCom\n");
 
-    // release the memory partition allocated in the UART service routine
-    OSMemPut (&Mem_Partition, p_msg, &err);                              // <18>
-    if (err != OS_ERR_NONE)
-      APP_TRACE_DBG ("Error OSMemPut: AppTaskCom\n");
+	  p_msg = (CPU_CHAR *) OSMemGet (&Mem_Partition1, &err);
+	  if (err != OS_ERR_NONE)
+	     	APP_TRACE_DBG ("Error OSMemGet1: AppTaskCom\n");
+	  sprintf(p_msg,"%s\n",msg);
+	  OSQPost ( 	(OS_Q      *) &Q_STEP_X,
+			  (void      *) p_msg,
+			  (OS_MSG_SIZE) MAX_MSG_LENGTH,
+			  (OS_OPT)      OS_OPT_POST_FIFO,
+	  	      (OS_ERR    *) &err);
+	  if (err != OS_ERR_NONE)
+		  APP_TRACE_DBG ("Error OSQPost1: AppTaskCom\n");
 
-    // send ACK in return
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, ACK);                           // <19>
 
-    // print the received message to the debug interface
-    sprintf (debug_msg, "Msg: %s\tLength: %d\n", msg, msg_size - 1);     // <20>
-    APP_TRACE_INFO (debug_msg);
 
-    // send the received message back via the UART pre-text with "XMC: "
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'X');                           // <21>
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'M');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'C');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, ':');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, ' ');
-    for (i = 0; i <= msg_size; i++) {
-    	if (msg[i] != 0){
- 			XMC_UART_CH_Transmit (XMC_UART1_CH1, msg[i]);
-     	}else{
-       		break;
-    	}
-    }
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+	  // Check if done
+	  p_msg = OSQPend (&Q_STEP_X,
+	  		0,
+	  	    OS_OPT_PEND_BLOCKING,
+	        &msg_size,
+	 	    &ts,
+	  		&err);
+	  if (err != OS_ERR_NONE)
+	  		      APP_TRACE_DBG ("Error OSQPend1: AppSTEPY\n");
+	  OSMemPut (&Mem_Partition1, p_msg, &err);
+	  XMC_UART_CH_Transmit (XMC_UART1_CH1, ACK);                           // <19>
   }
 }
 /***********************************AppTask_Io*/
 void AppTaskStepper_Y (void *p_arg)
 {
-	OS_ERR      err;
+	void    *q_msg;
+	OS_MSG_SIZE msg_size;
 	CPU_TS      ts=0;
+	OS_ERR      err;
+	CPU_CHAR    msg[MAX_MSG_LENGTH];
+	CPU_INT08U 	i;
+	int  times = 0;
+	CPU_CHAR delay[5];
+	CPU_CHAR steps[5];
+	CPU_CHAR dir[2];
+	char *msg_p=0;
 	APP_TRACE_INFO ("Entering AppTaskStepperY ...\n");
 
 	while(1){
-		while(_mcp23s08_step_posy()){}
-		while(_mcp23s08_step_negy()){}
+	// Pending for message
+		q_msg = OSQPend (&Q_STEP_Y,
+				0,
+		        OS_OPT_PEND_BLOCKING,
+		        &msg_size,
+		        &ts,
+				&err);
+		if (err != OS_ERR_NONE)
+		      APP_TRACE_DBG ("Error OSQPend1: AppSTEPY\n");
+		// obtain message we received
+		memcpy (msg, (CPU_CHAR*) q_msg, msg_size - 1);
+		APP_TRACE_INFO("GOT Y MSG\n");
+		sprintf(msg,"%s\n",msg);
+		APP_TRACE_INFO(msg);
+		// release the memory partition
+	    OSMemPut (&Mem_Partition2, q_msg, &err);                              // <18>
+	    if (err != OS_ERR_NONE)
+	    	APP_TRACE_DBG ("Error OSMemPut1: AppSTEPY\n");
+	//DECODE
+	    msg_p=&msg[0];
+	    memset(&delay,0,5);
+	    i=0;
+	    while(*msg_p!= ':'){
+	    	delay[i]=*msg_p;
+	    	msg_p++;
+	       	i++;
+	   	}
+ 	    while(*msg_p== ':'){
+ 	    	msg_p++;
+   	   	}
+   	    memset(&steps,0,5);
+   	    i=0;
+	    while(*msg_p != ':'){
+	    	steps[i]=*msg_p;
+	    	msg_p++;
+	       	i++;
+	   	}
+	    while(*msg_p== ':'){
+	       	msg_p++;
+	    }
+	    memset(&dir,0,2);
+	    i=0;
+	    while(*msg_p != '\0'){
+	   	   	dir[i]=*msg_p;
+	   	   	msg_p++;
+	       	i++;
+	    }
+	//Plott
+	    if(atoi(delay)==0){
+	    	times=atoi(steps);
+	    	while(times--){
+	    		if(atoi(dir)){
+	    			_mcp23s08_step_posy();
+	    		}else{
+	    			_mcp23s08_step_negy();
+	    		}
+	    	}
+	    }
+	//DONE
+	    q_msg = (CPU_CHAR *) OSMemGet (&Mem_Partition2, &err);
+	    if (err != OS_ERR_NONE)
+	    	APP_TRACE_DBG ("Error OSMemGet1: TaskSTePY\n");
+	    OSQPost ( 	(OS_Q      *) &Q_STEP_Y,
+	         		(void      *) q_msg,
+	    	       	(OS_MSG_SIZE) MAX_MSG_LENGTH,
+	    	       	(OS_OPT)      OS_OPT_POST_FIFO,
+	    	        (OS_ERR    *) &err);
+	   	if (err != OS_ERR_NONE)
+	   		APP_TRACE_DBG ("Error OSQPost1: TaskSTePY\n");
 	}//Whileend
 }
 
 //Servo
 void AppTaskStepper_X (void *p_arg){
-	OS_ERR      err;
+	void    *q_msg;
+	OS_MSG_SIZE msg_size;
 	CPU_TS      ts=0;
+	OS_ERR      err;
+	CPU_CHAR    msg[MAX_MSG_LENGTH];
+	CPU_INT08U 	i;
+	int  times = 0;
+	CPU_CHAR delay[5];
+	CPU_CHAR steps[5];
+	CPU_CHAR dir[2];
+	char *msg_p=0;
+
 	APP_TRACE_INFO ("Entering AppTaskStepperX ...\n");
 
 	while(1){
-		while(_mcp23s08_step_posx()){}
-		while(_mcp23s08_step_negx()){}
-	}
+	// Pending for message
+		q_msg = OSQPend (&Q_STEP_X,
+				0,
+		        OS_OPT_PEND_BLOCKING,
+		        &msg_size,
+			    &ts,
+				&err);
+		if (err != OS_ERR_NONE)
+		      APP_TRACE_DBG ("Error OSQPend1: AppTaskStepperX\n");
+			// obtain message we received
+		memcpy (msg, (CPU_CHAR*) q_msg, msg_size - 1);
+		APP_TRACE_INFO("GOT X MSG\n");
+		sprintf(msg,"%s\n",msg);
+		APP_TRACE_INFO(msg);
+		// release the memory partition
+	    OSMemPut (&Mem_Partition1, q_msg, &err);                              // <18>
+	    if (err != OS_ERR_NONE)
+	    	APP_TRACE_DBG ("Error OSMemPut1: AppTaskStepperX\n");
+		//DECODE
+		msg_p=&msg[0];
+	   memset(&delay,0,5);
+	   i=0;
+	   while(*msg_p!= ':'){
+	    	delay[i]=*msg_p;
+	    	msg_p++;
+	       	i++;
+	   	}
+	    while(*msg_p== ':'){
+	    	msg_p++;
+	   	}
+	    memset(&steps,0,5);
+	    i=0;
+		while(*msg_p != ':'){
+		 	steps[i]=*msg_p;
+		   	msg_p++;
+	    	i++;
+	   	}
+	    while(*msg_p== ':'){
+	       	msg_p++;
+	    }
+	    memset(&dir,0,2);
+	    i=0;
+	    while(*msg_p != '\0'){
+	   	   	dir[i]=*msg_p;
+	   	   	msg_p++;
+	       	i++;
+	    }
+	    //Plott
+		if(atoi(delay)==0){
+		   	times=atoi(steps);
+		   	while(times--){
+	    		if(atoi(dir)){
+	    			_mcp23s08_step_posx();
+		    	}else{
+		    		_mcp23s08_step_negx();
+		    	}
+		    }
+		}
+		//DONE
+	    q_msg = (CPU_CHAR *) OSMemGet (&Mem_Partition1, &err);
+	    if (err != OS_ERR_NONE)
+	    	APP_TRACE_DBG ("Error OSMemGet1: TaskSTePY\n");
+	    OSQPost ( 	(OS_Q      *) &Q_STEP_X,
+	         		(void      *) q_msg,
+	    	       	(OS_MSG_SIZE) MAX_MSG_LENGTH,
+	    	       	(OS_OPT)      OS_OPT_POST_FIFO,
+	    	        (OS_ERR    *) &err);
+	   	if (err != OS_ERR_NONE)
+		   		APP_TRACE_DBG ("Error OSQPost1: TaskSTePY\n");
+	}//Whileend
 }
 /************************************************************************ EOF */
 /******************************************************************************/
