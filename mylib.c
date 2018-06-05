@@ -8,6 +8,11 @@
 #include <os.h>
 #include <mylib.h>
 #include <bsp_gpio.h>
+#include <bsp_ccu4.h>
+#include <app_cfg.h>
+#include "mcp23s08_drv.h"
+
+
 
 
 //_________________________________DEBOUNCE
@@ -42,4 +47,19 @@ void pen_up(void){
 
 void pen_down(void){
 	CCU40_0_SetCapture(1);
+}
+
+void diagonal(int times,_Bool xdir,_Bool ydir){
+	while(times--){
+		if(xdir){
+			_mcp23s08_step_posx();
+		}else{
+			_mcp23s08_step_negx();
+		}
+		if(xdir){
+			_mcp23s08_step_posy();
+		}else{
+			_mcp23s08_step_negy();
+		}
+	}
 }

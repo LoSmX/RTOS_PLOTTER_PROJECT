@@ -232,7 +232,6 @@ void _mcp23s08_goto_0_0(void){
 
 void _mcp23s08_Plotter_Init(void){
 	//RESET and config GPIO
-	CPU_CHAR    d_msg[30];
 	_mcp23s08_reset();
 	_mcp23s08_config_gpio();
 	//MESURE the max nuber of Steps and go to [0,0]

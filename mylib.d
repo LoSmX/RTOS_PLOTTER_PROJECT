@@ -41,4 +41,10 @@ mylib.o: mylib.c ../UCOS3/uC-CPU/cpu_core.h \
  d:\ebs\5.4\ 2016q3\lib\gcc\arm-none-eabi\5.4.1\include\stdarg.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\types.h \
  d:\ebs\5.4\ 2016q3\arm-none-eabi\include\machine\types.h \
- d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\stdio.h
+ d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\stdio.h BSP/bsp_ccu4.h \
+ BSP/../../XMCLIB/inc/xmc_ccu4.h BSP/../../XMCLIB/inc/xmc4_ccu4_map.h \
+ app_cfg.h mcp23s08_drv.h BSP/bsp_spi.h ../XMCLIB/inc/xmc_spi.h \
+ ../XMCLIB/inc/xmc_usic.h ../XMCLIB/inc/xmc_gpio.h \
+ d:\ebs\5.4\ 2016q3\arm-none-eabi\include\errno.h \
+ d:\ebs\5.4\ 2016q3\arm-none-eabi\include\sys\errno.h \
+ ../XMCLIB/inc/xmc_gpio.h ../XMCLIB/inc/xmc_spi.h
