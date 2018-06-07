@@ -4,10 +4,10 @@ mcp23s08_drv.c:33:9:_mcp23s08_reset_ss	16	static
 mcp23s08_drv.c:48:9:_mcp23s08_set_ss	16	static
 mcp23s08_drv.c:62:9:_mcp23s08_reset	8	static
 mcp23s08_drv.c:78:9:_mcp23s08_reg_xfer	24	static
-mcp23s08_drv.c:113:9:_mcp23s08_step_posy	24	static
-mcp23s08_drv.c:141:9:_mcp23s08_step_negy	24	static
-mcp23s08_drv.c:169:9:_mcp23s08_step_posx	24	static
-mcp23s08_drv.c:198:9:_mcp23s08_step_negx	24	static
-mcp23s08_drv.c:226:6:_mcp23s08_goto_0_0	16	static
-mcp23s08_drv.c:233:6:_mcp23s08_Plotter_Init	8	static
-mcp23s08_drv.c:257:6:_mcp23s08_config_gpio	8	static
+mcp23s08_drv.c:113:9:_mcp23s08_step_negy	16	static
+mcp23s08_drv.c:142:9:_mcp23s08_step_posy	16	static
+mcp23s08_drv.c:170:9:_mcp23s08_step_posx	16	static
+mcp23s08_drv.c:199:9:_mcp23s08_step_negx	16	static
+mcp23s08_drv.c:227:6:_mcp23s08_goto_0_0	16	static
+mcp23s08_drv.c:234:6:_mcp23s08_Plotter_Init	8	static
+mcp23s08_drv.c:258:6:_mcp23s08_config_gpio	8	static

@@ -58,10 +58,8 @@ static  OS_TCB   AppStartTaskTCB;
 
 static  CPU_STK  AppTaskComStk[APP_CFG_TASK_COM_STK_SIZE];
 static  CPU_STK  AppTaskEndstopsStk[APP_CFG_TASK_IO_STK_SIZE];
-static  CPU_STK  AppTaskServoStk[APP_CFG_TASK_IO_STK_SIZE];
 static  OS_TCB   AppTaskComTCB;
-static  OS_TCB   AppTaskEndstopsTCB;
-static  OS_TCB   AppTaskServoTCB;
+static  OS_TCB   AppTaskStepperTCB;
 
 // Memory Block                                                           // <2>
 OS_MEM      Mem_Partition;
@@ -72,19 +70,18 @@ CPU_CHAR    MyPartitionStorage1[NUM_MSG - 1][MAX_MSG_LENGTH];
 CPU_CHAR    MyPartitionStorage2[NUM_MSG - 1][MAX_MSG_LENGTH];
 // Message Queue
 OS_Q        UART_ISR;
-OS_Q        Q_STEP_X;
-OS_Q        Q_STEP_Y;
-OS_Q        Q_STEP_X_1;
-OS_Q        Q_STEP_Y_1;
+OS_Q        Q_STEP_1;
+OS_Q        Q_STEP_2;
 
+__uint64_t x_c=0;
+__uint64_t y_c=0;
 
 /****************************************************** FILE LOCAL PROTOTYPES */
 static  void AppTaskStart (void  *p_arg);
 static  void AppTaskCreate (void);
 static  void AppObjCreate (void);
 static  void AppTaskCom (void  *p_arg);
-void AppTaskStepper_X (void  *p_arg);
-void AppTaskStepper_Y (void  *p_arg);
+void AppTaskStepper (void  *p_arg);
 /************************************************************ FUNCTIONS/TASKS */
 
 /*********************************************************************** MAIN */
@@ -257,34 +254,19 @@ static void AppObjCreate (void)
 	    APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 
 	  // Create Message Queue
-	  OSQCreate ( (OS_Q *)     &Q_STEP_X,
+	  OSQCreate ( (OS_Q *)     &Q_STEP_1,
 	 	              (CPU_CHAR *) "STEP_X Queue",
 	 	              (OS_MSG_QTY) NUM_MSG,
 	 	              (OS_ERR   *) &err);
 	  if (err != OS_ERR_NONE)
 		  APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 	    // Create Message Queue
-	  OSQCreate ( (OS_Q *)     &Q_STEP_Y,
+	  OSQCreate ( (OS_Q *)     &Q_STEP_2,
 	              (CPU_CHAR *) "STEP_Y Queue",
 	              (OS_MSG_QTY) NUM_MSG,
 	              (OS_ERR   *) &err);
 	  if (err != OS_ERR_NONE)
 		  APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
-
-	  // Create Message Queue
-	 	  OSQCreate ( (OS_Q *)     &Q_STEP_X_1,
-	 	 	              (CPU_CHAR *) "STEP_X_1 Queue",
-	 	 	              (OS_MSG_QTY) NUM_MSG,
-	 	 	              (OS_ERR   *) &err);
-	 	  if (err != OS_ERR_NONE)
-	 		  APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
-	 	    // Create Message Queue
-	 	  OSQCreate ( (OS_Q *)     &Q_STEP_Y_1,
-	 	              (CPU_CHAR *) "STEP_Y_1 Queue",
-	 	              (OS_MSG_QTY) NUM_MSG,
-	 	              (OS_ERR   *) &err);
-	 	  if (err != OS_ERR_NONE)
-	 		  APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 
 }
 
@@ -317,9 +299,9 @@ static void  AppTaskCreate (void)
     APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate\n");
 
   // create AppTask_IO
-    OSTaskCreate ( (OS_TCB     *) &AppTaskEndstopsTCB,
-             (CPU_CHAR   *) "TaskStepper_Y",
-             (OS_TASK_PTR) AppTaskStepper_Y,
+    OSTaskCreate ( (OS_TCB     *) &AppTaskStepperTCB,
+             (CPU_CHAR   *) "TaskStepper",
+             (OS_TASK_PTR) AppTaskStepper,
              (void       *) 0,
              (OS_PRIO) APP_CFG_TASK_ENDSTOPS_PRIO,
              (CPU_STK    *) &AppTaskEndstopsStk[0],
@@ -332,25 +314,6 @@ static void  AppTaskCreate (void)
              (OS_ERR     *) &err);
     if (err != OS_ERR_NONE)
       APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate\n");
-
-
-  // create AppTask_IO
-        OSTaskCreate ( (OS_TCB     *) &AppTaskServoTCB,
-                 (CPU_CHAR   *) "TaskStepper_X",
-                 (OS_TASK_PTR) AppTaskStepper_X,
-                 (void       *) 0,
-                 (OS_PRIO) APP_CFG_TASK_SERVO_PRIO,
-                 (CPU_STK    *) &AppTaskServoStk[0],
-                 (CPU_STK_SIZE) APP_CFG_TASK_COM_STK_SIZE / 10u,
-                 (CPU_STK_SIZE) APP_CFG_TASK_COM_STK_SIZE,
-                 (OS_MSG_QTY) 0u,
-                 (OS_TICK) 0u,
-                 (void       *) 0,
-                 (OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
-                 (OS_ERR     *) &err);
-        if (err != OS_ERR_NONE)
-          APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate\n");
-
 }
 
 /*********************************** Communication Application Task */
@@ -375,11 +338,22 @@ static void  AppTaskCreate (void)
  */
 static void AppTaskCom (void *p_arg)
 {
-  void        *p_msg;
-  OS_ERR      err;
-  OS_MSG_SIZE msg_size;
-  CPU_TS      ts;
-  CPU_CHAR    msg[MAX_MSG_LENGTH];
+  void        	*p_msg;
+  OS_ERR      	err;
+  OS_MSG_SIZE 	msg_size;
+  CPU_TS     	ts;
+  CPU_CHAR    	msg[MAX_MSG_LENGTH];
+  CPU_CHAR    	x1[MAX_MSG_LENGTH];
+  CPU_CHAR    	x2[MAX_MSG_LENGTH];
+  CPU_CHAR  	y1[MAX_MSG_LENGTH];
+  CPU_CHAR  	y2[MAX_MSG_LENGTH];
+  char 			*msg_p=0;
+  int 			x1_i;
+  int 			y1_i;
+  int 			x2_i;
+  int 			y2_i;
+  int 			i;
+
   (void) p_arg;
 
   APP_TRACE_INFO ("Entering AppTaskCom ...\n");
@@ -391,6 +365,7 @@ static void AppTaskCom (void *p_arg)
 	  APP_TRACE_INFO ("Pending for uart message ...\n");
 
 	  // wait until a message is received
+
 	  p_msg = OSQPend (&UART_ISR,
 			  0,
 			  OS_OPT_PEND_BLOCKING,
@@ -409,12 +384,73 @@ static void AppTaskCom (void *p_arg)
 	  if (err != OS_ERR_NONE)
 	 	  APP_TRACE_DBG ("Error OSMemPut: AppTaskCom\n");
 
+	  // EXTRACT Coordinates
+	  XMC_UART_CH_Transmit (XMC_UART1_CH1, 'X');                           // <19>
+
+	  msg_p=&msg[0];
+	  memset(&x1,0,MAX_MSG_LENGTH);
+	  i=0;
+	  while(*msg_p!= ':'){
+		  x1[i]=*msg_p;
+		  msg_p++;
+		  i++;
+	  }
+	  while(*msg_p== ':'){
+		  msg_p++;
+	  }
+
+	  memset(&y1,0,MAX_MSG_LENGTH);
+	  i=0;
+	  while(*msg_p != ':'){
+		  y1[i]=*msg_p;
+		  msg_p++;
+		  i++;
+	  }
+	  while(*msg_p== ':'){
+	  		  msg_p++;
+	  }
+
+	  memset(&x2,0,MAX_MSG_LENGTH);
+	  i=0;
+	  while(*msg_p!= ':'){
+		  x2[i]=*msg_p;
+		  msg_p++;
+		  i++;
+	  }
+	  while(*msg_p== ':'){
+		  msg_p++;
+	  }
+
+	  memset(&y2,0,2);
+	  i=0;
+	  while(*msg_p != '\0'){
+		  y2[i]=*msg_p;
+		  msg_p++;
+		  i++;
+	  }
+	  x1_i=atoi(x1);
+	  y1_i=atoi(y1);
+	  x2_i=atoi(x2);
+	  y2_i=atoi(y2);
+
+	  x1_i= x1_i - x_c;
+	  y1_i= y1_i - y_c;
+	  pen_up();
+	  drawline( x1_i, y1_i);
+	  pen_down();
+	  x2_i= x2_i - x_c;
+	  y2_i= y2_i - y_c;
+	  drawline( x2_i, y2_i);
+
 	  //send to STEP TASKS
-	  p_msg = (CPU_CHAR *) OSMemGet (&Mem_Partition2, &err);
+	 /* p_msg = (CPU_CHAR *) OSMemGet (&Mem_Partition2, &err);
 	  if (err != OS_ERR_NONE)
 		  APP_TRACE_DBG ("Error OSMemGet1: AppTaskCom\n");
-	  sprintf(p_msg,"%s",msg);
-	  OSQPost ( 	(OS_Q      *) &Q_STEP_Y,
+	  sprintf(p_msg,"%s\n",msg);
+	  APP_TRACE_INFO (p_msg);
+	  sprintf(p_msg,"%s\0",msg);
+
+	  OSQPost ( 	(OS_Q      *) &Q_STEP_1,
 	  			  (void      *) p_msg,
 	  			  (OS_MSG_SIZE) MAX_MSG_LENGTH,
 	  			  (OS_OPT)      OS_OPT_POST_FIFO,
@@ -424,7 +460,7 @@ static void AppTaskCom (void *p_arg)
 
 
 	  // Check if dones
-	  OSQPend (&Q_STEP_X,
+	  OSQPend (&Q_STEP_2,
 	  		  		0,
 	  		  	    OS_OPT_PEND_BLOCKING,
 	  		        &msg_size,
@@ -433,12 +469,13 @@ static void AppTaskCom (void *p_arg)
 	  if (err != OS_ERR_NONE)
 	  	 APP_TRACE_DBG ("Error OSQPend1: AppSTEPY\n");
 	  OSMemPut (&Mem_Partition1, p_msg, &err);
-
-	  XMC_UART_CH_Transmit (XMC_UART1_CH1, ACK);                           // <19>
+	  */
+	 // XMC_UART_CH_Transmit (XMC_UART1_CH1, ACK);
+	APP_TRACE_INFO ("Plot Line end\n");
   }
 }
 /***********************************AppTask_Io*/
-void AppTaskStepper_Y (void *p_arg)
+void AppTaskStepper (void *p_arg)
 {
 	void    *q_msg;
 	OS_MSG_SIZE msg_size;
@@ -451,8 +488,8 @@ void AppTaskStepper_Y (void *p_arg)
 	CPU_CHAR ysteps[5];
 	_Bool xdir= 0;
 	_Bool ydir= 0;
-	double factor=0;
-	double ready=0;
+	long double factor=0;
+	long double ready=0;
 	int times=0;
 	int xtimes=0;
 	int ytimes=0;
@@ -461,7 +498,7 @@ void AppTaskStepper_Y (void *p_arg)
 
 	while(1){
 	// Pending for message
-		q_msg = OSQPend (&Q_STEP_Y,
+		q_msg = OSQPend (&Q_STEP_1,
 				0,
 		        OS_OPT_PEND_BLOCKING,
 		        &msg_size,
@@ -519,27 +556,29 @@ void AppTaskStepper_Y (void *p_arg)
 			diagonal(times,xdir,ydir);
 		}else if(xtimes==0){		//vertical line
 			times=ytimes;
-			while(times--){
+			while(times!=0){
 				if(ydir){
 					_mcp23s08_step_posy();
 				}else{
 					_mcp23s08_step_negy();
 				}
+				times--;
 			}
 		}else if(ytimes==0){		//horizontal line
 			times=xtimes;
-			while(times--){
+			while(times!=0){
 				if(xdir){
 					_mcp23s08_step_posx();
 				}else{
 					_mcp23s08_step_negx();
 				}
+				times--;
 			}
-		}else if(ytimes < xtimes){		//too bee continued
+		}else if(ytimes < xtimes){		//
 			times=xtimes;
 			factor=(double)ytimes/(double)xtimes;
 			ready=0;
-			while(times){
+			while(times>0){
 				while(ready < 1){
 					if(xdir){
 						_mcp23s08_step_posx();
@@ -560,7 +599,7 @@ void AppTaskStepper_Y (void *p_arg)
 			times=ytimes;
 			factor=(double)xtimes/(double)ytimes;
 			ready=0;
-			while(times){
+			while(times>0){
 				while(ready < 1){
 					if(xdir){
 						_mcp23s08_step_posy();
@@ -584,7 +623,7 @@ void AppTaskStepper_Y (void *p_arg)
 	    q_msg = (CPU_CHAR *) OSMemGet (&Mem_Partition1, &err);
 	    if (err != OS_ERR_NONE)
 	    	APP_TRACE_DBG ("Error OSMemGet1: TaskSTePY\n");
-	    OSQPost ( 	(OS_Q      *) &Q_STEP_X,
+	    OSQPost ( 	(OS_Q      *) &Q_STEP_2,
 	         		(void      *) q_msg,
 	    	       	(OS_MSG_SIZE) MAX_MSG_LENGTH,
 	    	       	(OS_OPT)      OS_OPT_POST_FIFO,
@@ -592,11 +631,6 @@ void AppTaskStepper_Y (void *p_arg)
 	   	if (err != OS_ERR_NONE)
 	   		APP_TRACE_DBG ("Error OSQPost1: TaskSTePY\n");
 	}//Whileend
-}
-
-//Servo
-void AppTaskStepper_X (void *p_arg){
-
 }
 /************************************************************************ EOF */
 /******************************************************************************/

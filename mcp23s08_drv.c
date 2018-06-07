@@ -20,8 +20,8 @@
 
 uint8_t mcp23s08_addr = 0x40;
 uint8_t mcp23s08_nop = 0x00;
-__uint64_t x_steps=0;
-__uint64_t y_steps=0;
+extern __uint64_t x_c;
+extern __uint64_t y_c;
 __uint64_t x_steps_MAX=1986;
 __uint64_t y_steps_MAX=1695;
 /*!
@@ -110,27 +110,31 @@ uint8_t _mcp23s08_reg_xfer(XMC_USIC_CH_t *const channel, uint8_t reg_name, uint8
   return recv;
 }
 
-uint8_t _mcp23s08_step_posy(void){
-	uint8_t reg_val;
+uint8_t _mcp23s08_step_negy(void){
+	//uint8_t reg_val;
 
 	if(debounce(ENDSTOP1)){
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		//reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		//_mcp23s08_set_ss(MCP23S08_SS);
+
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,(reg_val | 0x02) & 0xFE,MCP23S08_WR);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x02,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
 		//APP_TRACE_INFO ("PLOTTERSTEP HIGH...\n");
-		_mcp23s08_reset_ss(MCP23S08_SS);
-		reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
-		_mcp23s08_set_ss(MCP23S08_SS);
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		//reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		//_mcp23s08_set_ss(MCP23S08_SS);
 
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val & 0xFD,MCP23S08_WR);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
-		y_steps++;
+		y_c--;
 		return 1;
 	}else{
 		return 0;
@@ -138,27 +142,30 @@ uint8_t _mcp23s08_step_posy(void){
 }
 
 
-uint8_t _mcp23s08_step_negy(void){
+uint8_t _mcp23s08_step_posy(void){
 	uint8_t reg_val;
 
 	if(debounce(ENDSTOP2)){
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		//reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		//_mcp23s08_set_ss(MCP23S08_SS);
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x01,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val | 0x03,MCP23S08_WR);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x3,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
 		//APP_TRACE_INFO ("PLOTTERSTEP HIGH...\n");
-		_mcp23s08_reset_ss(MCP23S08_SS);
-		reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
-		_mcp23s08_set_ss(MCP23S08_SS);
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		//reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		//_mcp23s08_set_ss(MCP23S08_SS);
 
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val & 0xFD,MCP23S08_WR);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x1,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
-		y_steps--;
+		y_c++;
 		return 1;
 	}else{
 		return 0;
@@ -171,24 +178,27 @@ uint8_t _mcp23s08_step_posx(void){
 
 	if(debounce(ENDSTOP4)){
 
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		//reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		//_mcp23s08_set_ss(MCP23S08_SS);
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x04,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val | 0x0C,MCP23S08_WR);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0xC,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
 		//APP_TRACE_INFO ("PLOTTERSTEP HIGH...\n");
 
-		_mcp23s08_reset_ss(MCP23S08_SS);
-		reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
-		_mcp23s08_set_ss(MCP23S08_SS);
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		//reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		//_mcp23s08_set_ss(MCP23S08_SS);
 
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val & 0xF7,MCP23S08_WR);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x4,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
-		x_steps++;
+		x_c++;
 		return 1;
 	}else{
 		return 0;
@@ -196,27 +206,30 @@ uint8_t _mcp23s08_step_posx(void){
 }
 
 uint8_t _mcp23s08_step_negx(void){
-	uint8_t reg_val;
+	//uint8_t reg_val;
 
 	if(debounce(ENDSTOP3)){
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		//reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		//_mcp23s08_set_ss(MCP23S08_SS);
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,(reg_val | 0x08) & 0xFA,MCP23S08_WR);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x8,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
 		//APP_TRACE_INFO ("PLOTTERSTEP HIGH...\n");
-		_mcp23s08_reset_ss(MCP23S08_SS);
-		reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
-		_mcp23s08_set_ss(MCP23S08_SS);
+		//_mcp23s08_reset_ss(MCP23S08_SS);
+		///reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
+		//_mcp23s08_set_ss(MCP23S08_SS);
 
 		_mcp23s08_reset_ss(MCP23S08_SS);
-		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val & 0xF7,MCP23S08_WR);
+		_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x0,MCP23S08_WR);
 		_mcp23s08_set_ss(MCP23S08_SS);
 
-		x_steps--;
+		x_c--;
 		return 1;
 	}else{
 		return 0;
@@ -224,10 +237,10 @@ uint8_t _mcp23s08_step_negx(void){
 }
 
 void _mcp23s08_goto_0_0(void){
-	while(_mcp23s08_step_negx() || _mcp23s08_step_posy()){
+	while(_mcp23s08_step_negx() || _mcp23s08_step_negy()){
 	}
-	x_steps=0;
-	y_steps=0;
+	x_c=0;
+	y_c=0;
 }
 
 void _mcp23s08_Plotter_Init(void){
