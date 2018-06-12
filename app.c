@@ -433,7 +433,7 @@ static void AppTaskCom (void *p_arg)
 
 	  x1_i= x1_i - x_c;
 	  y1_i= y1_i - y_c;
-	  if(x1_i != 0 && y1_i != 0){
+	  if((x1_i != 0 && (x1_i>1 || x1_i<-1)) || (y1_i != 0 && (y1_i>1 || y1_i<-1))){
 		  pen_up();
 		  drawline( x1_i, y1_i);
 		  pen_down();
