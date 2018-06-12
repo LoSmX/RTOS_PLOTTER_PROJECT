@@ -73,8 +73,8 @@ OS_Q        UART_ISR;
 OS_Q        Q_STEP_1;
 OS_Q        Q_STEP_2;
 
-__uint64_t x_c=0;
-__uint64_t y_c=0;
+extern int x_c;
+extern int y_c;
 
 /****************************************************** FILE LOCAL PROTOTYPES */
 static  void AppTaskStart (void  *p_arg);
@@ -360,7 +360,7 @@ static void AppTaskCom (void *p_arg)
 
   while (DEF_TRUE) {
 	  // empty the message buffer
-	  memset (&msg, 0, MAX_MSG_LENGTH);
+
 
 	  APP_TRACE_INFO ("Pending for uart message ...\n");
 
@@ -376,7 +376,7 @@ static void AppTaskCom (void *p_arg)
 		  APP_TRACE_DBG ("Error OSQPend: AppTaskCom\n");
 	  // obtain message we received
 	  APP_TRACE_INFO ("Got uart message ...\n");
-
+	  memset (&msg, 0, MAX_MSG_LENGTH);
 	  memcpy (msg, (CPU_CHAR*) p_msg, msg_size - 1);
 
 	  // release the memory partition allocated in the UART service routine
@@ -385,8 +385,6 @@ static void AppTaskCom (void *p_arg)
 	 	  APP_TRACE_DBG ("Error OSMemPut: AppTaskCom\n");
 
 	  // EXTRACT Coordinates
-	  XMC_UART_CH_Transmit (XMC_UART1_CH1, 'X');                           // <19>
-
 	  msg_p=&msg[0];
 	  memset(&x1,0,MAX_MSG_LENGTH);
 	  i=0;
@@ -421,7 +419,7 @@ static void AppTaskCom (void *p_arg)
 		  msg_p++;
 	  }
 
-	  memset(&y2,0,2);
+	  memset(&y2,0,MAX_MSG_LENGTH);
 	  i=0;
 	  while(*msg_p != '\0'){
 		  y2[i]=*msg_p;
@@ -435,9 +433,18 @@ static void AppTaskCom (void *p_arg)
 
 	  x1_i= x1_i - x_c;
 	  y1_i= y1_i - y_c;
-	  pen_up();
-	  drawline( x1_i, y1_i);
-	  pen_down();
+	  if(x1_i != 0 && y1_i != 0){
+		  pen_up();
+		  drawline( x1_i, y1_i);
+		  pen_down();
+	  }else{
+		  OSTimeDlyHMSM  (0,
+		  				0,
+						0,
+						100,
+						OS_OPT_TIME_HMSM_STRICT ,
+						&err);
+	  }
 	  x2_i= x2_i - x_c;
 	  y2_i= y2_i - y_c;
 	  drawline( x2_i, y2_i);
@@ -471,6 +478,7 @@ static void AppTaskCom (void *p_arg)
 	  OSMemPut (&Mem_Partition1, p_msg, &err);
 	  */
 	 // XMC_UART_CH_Transmit (XMC_UART1_CH1, ACK);
+	XMC_UART_CH_Transmit (XMC_UART1_CH1, 'X');                           // <19>
 	APP_TRACE_INFO ("Plot Line end\n");
   }
 }
@@ -484,8 +492,8 @@ void AppTaskStepper (void *p_arg)
 	CPU_CHAR    msg[MAX_MSG_LENGTH];
 	int 	i;
 
-	CPU_CHAR xsteps[5];
-	CPU_CHAR ysteps[5];
+	CPU_CHAR xsteps[MAX_MSG_LENGTH];
+	CPU_CHAR ysteps[MAX_MSG_LENGTH];
 	_Bool xdir= 0;
 	_Bool ydir= 0;
 	long double factor=0;
@@ -507,17 +515,17 @@ void AppTaskStepper (void *p_arg)
 		if (err != OS_ERR_NONE)
 		      APP_TRACE_DBG ("Error OSQPend1: AppSTEPY\n");
 		// obtain message we received
+		memset(&msg,0,MAX_MSG_LENGTH);
 		memcpy (msg, (CPU_CHAR*) q_msg, msg_size - 1);
-		APP_TRACE_INFO("GOT Y MSG\n");
-		sprintf(msg,"%s\n",msg);
-		APP_TRACE_INFO(msg);
+		APP_TRACE_INFO("GOT COORDINATES !!! \n");
+
 		// release the memory partition
 	    OSMemPut (&Mem_Partition2, q_msg, &err);                              // <18>
 	    if (err != OS_ERR_NONE)
 	    	APP_TRACE_DBG ("Error OSMemPut1: AppSTEPY\n");
 	//DECODE
 	    msg_p=&msg[0];
-	    memset(&xsteps,0,5);
+	    memset(&xsteps,0,MAX_MSG_LENGTH);
 	    i=0;
 	    while(*msg_p!= ':'){
 	    	xsteps[i]=*msg_p;
@@ -528,7 +536,7 @@ void AppTaskStepper (void *p_arg)
  	    	msg_p++;
    	   	}
 
-	    memset(&ysteps,0,2);
+	    memset(&ysteps,0,MAX_MSG_LENGTH);
 	    i=0;
 	    while(*msg_p != '\0'){
 	    	ysteps[i]=*msg_p;
@@ -538,6 +546,8 @@ void AppTaskStepper (void *p_arg)
 	// PLOTT setup
 		xtimes = atoi(xsteps);
 		ytimes = atoi(ysteps);
+		sprintf(msg,"x: %d, y: %d\n",xtimes,ytimes);
+		APP_TRACE_INFO(msg);
 		if(xtimes<0){
 			xdir=0;
 			xtimes=0-xtimes;
@@ -588,7 +598,7 @@ void AppTaskStepper (void *p_arg)
 					ready= ready + factor;
 					times--;
 				}
-				if(xdir){
+				if(ydir){
 					_mcp23s08_step_posy();
 				}else{
 					_mcp23s08_step_negy();
@@ -601,7 +611,7 @@ void AppTaskStepper (void *p_arg)
 			ready=0;
 			while(times>0){
 				while(ready < 1){
-					if(xdir){
+					if(ydir){
 						_mcp23s08_step_posy();
 					}else{
 						_mcp23s08_step_negy();
@@ -620,6 +630,11 @@ void AppTaskStepper (void *p_arg)
 
 
 	//DONE
+		APP_TRACE_INFO("My current position is: \n");
+		sprintf(msg,"x: %d , y: %d \n", x_c, y_c);
+		APP_TRACE_INFO(msg);
+
+
 	    q_msg = (CPU_CHAR *) OSMemGet (&Mem_Partition1, &err);
 	    if (err != OS_ERR_NONE)
 	    	APP_TRACE_DBG ("Error OSMemGet1: TaskSTePY\n");

@@ -2,5 +2,5 @@ app.c:95:5:main	56	static
 app.c:160:13:AppTaskStart	32	static
 app.c:218:13:AppObjCreate	24	static
 app.c:280:14:AppTaskCreate	56	static
-app.c:339:13:AppTaskCom	168	static
-app.c:478:6:AppTaskStepper	128	static
+app.c:339:13:AppTaskCom	160	static
+app.c:486:6:AppTaskStepper	152	static

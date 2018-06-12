@@ -20,10 +20,10 @@
 
 uint8_t mcp23s08_addr = 0x40;
 uint8_t mcp23s08_nop = 0x00;
-extern __uint64_t x_c;
-extern __uint64_t y_c;
-__uint64_t x_steps_MAX=1986;
-__uint64_t y_steps_MAX=1695;
+int x_c=0;
+int y_c=0;
+__int64_t x_steps_MAX=1986;
+__int64_t y_steps_MAX=1695;
 /*!
  *  @brief This function resets the Slave Select
  *  @param XMC_GPIO_PORT_t *const port, const uint8_t pin
@@ -143,7 +143,7 @@ uint8_t _mcp23s08_step_negy(void){
 
 
 uint8_t _mcp23s08_step_posy(void){
-	uint8_t reg_val;
+	//uint8_t reg_val;
 
 	if(debounce(ENDSTOP2)){
 		//_mcp23s08_reset_ss(MCP23S08_SS);
@@ -174,7 +174,7 @@ uint8_t _mcp23s08_step_posy(void){
 
 
 uint8_t _mcp23s08_step_posx(void){
-	uint8_t reg_val;
+	//uint8_t reg_val;
 
 	if(debounce(ENDSTOP4)){
 

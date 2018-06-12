@@ -49,8 +49,8 @@ void pen_up(void){
 	CCU40_0_SetCapture(2);
 	OSTimeDlyHMSM  (0,
 				   	0,
-					0,
-	 	    		1,
+					1,
+	 	    		0,
 					OS_OPT_TIME_HMSM_STRICT ,
 				    &err);
 }
@@ -61,8 +61,8 @@ void pen_down(void){
 	CCU40_0_SetCapture(1);
 	OSTimeDlyHMSM  (0,
 				   	0,
-					0,
 					1,
+					0,
 					OS_OPT_TIME_HMSM_STRICT ,
 				    &err);
 }
@@ -74,7 +74,7 @@ void diagonal(int times,_Bool xdir,_Bool ydir){
 		}else{
 			_mcp23s08_step_negx();
 		}
-		if(xdir){
+		if(ydir){
 			_mcp23s08_step_posy();
 		}else{
 			_mcp23s08_step_negy();
@@ -96,9 +96,11 @@ void drawline(int x, int y){
 	p_msg = (CPU_CHAR *) OSMemGet (&Mem_Partition2, &err);
 	if (err != OS_ERR_NONE)
 		APP_TRACE_DBG ("Error OSMemGet1: AppTaskCom\n");
-	sprintf(p_msg,"Msg send to Step Task: %d:%d\n",x,y);
+	APP_TRACE_INFO ("Msg send to Step Task: \n");
+	sprintf(p_msg,"x: %d , y: %d\n",x,y);
 	APP_TRACE_INFO (p_msg);
-	sprintf(p_msg,"%d:%d\0",x,y);
+	memset(p_msg,0,20);
+	sprintf(p_msg,"%d:%d",x,y);
 
 	OSQPost ( 	(OS_Q      *) &Q_STEP_1,
 			(void      *) p_msg,
@@ -124,5 +126,5 @@ void drawline(int x, int y){
 	if (err != OS_ERR_NONE)
 		APP_TRACE_DBG ("Error OSQPut: drawline\n");
 
-	APP_TRACE_INFO ("PLot ended!\n");
+	APP_TRACE_INFO ("Plot at right position!\n");
 }

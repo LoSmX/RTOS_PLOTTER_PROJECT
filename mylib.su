@@ -1,6 +1,6 @@
 xmc_gpio.h:333:26:XMC_GPIO_GetInput	16	static
 mylib.c:21:7:debounce	24	static
-mylib.c:46:6:pen_up	8	static
-mylib.c:50:6:pen_down	8	static
-mylib.c:54:6:diagonal	16	static
-mylib.c:69:6:drawline	40	static
+mylib.c:46:6:pen_up	24	static
+mylib.c:58:6:pen_down	24	static
+mylib.c:70:6:diagonal	16	static
+mylib.c:85:6:drawline	40	static
